@@ -1,0 +1,12 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+scrape_configs:
+  - job_name: llmops-harness
+    metrics_path: /metrics
+    static_configs:
+      # host.docker.internal works on Docker Desktop (Mac/Windows).
+      # On Linux, run docker-compose with --add-host=host.docker.internal:host-gateway
+      # or replace with the host IP.
+      - targets: ["host.docker.internal:8000"]

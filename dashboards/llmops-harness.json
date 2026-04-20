@@ -1,0 +1,129 @@
+{
+  "title": "llmops-harness",
+  "uid": "llmops-harness",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "10s",
+  "time": { "from": "now-1h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "provider",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "query": "label_values(llm_requests_total, provider)",
+        "refresh": 1,
+        "includeAll": true,
+        "multi": true
+      },
+      {
+        "name": "model",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "query": "label_values(llm_requests_total{provider=~\"$provider\"}, model)",
+        "refresh": 1,
+        "includeAll": true,
+        "multi": true
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Request rate (req/s)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum by (provider, model, status) (rate(llm_requests_total{provider=~\"$provider\", model=~\"$model\"}[1m]))",
+          "legendFormat": "{{provider}}/{{model}} [{{status}}]"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 }
+    },
+    {
+      "id": 2,
+      "title": "Latency p50 / p95 / p99",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "histogram_quantile(0.50, sum by (le) (rate(llm_request_duration_seconds_bucket{provider=~\"$provider\", model=~\"$model\"}[5m])))", "legendFormat": "p50" },
+        { "expr": "histogram_quantile(0.95, sum by (le) (rate(llm_request_duration_seconds_bucket{provider=~\"$provider\", model=~\"$model\"}[5m])))", "legendFormat": "p95" },
+        { "expr": "histogram_quantile(0.99, sum by (le) (rate(llm_request_duration_seconds_bucket{provider=~\"$provider\", model=~\"$model\"}[5m])))", "legendFormat": "p99" }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 }
+    },
+    {
+      "id": 3,
+      "title": "Running cost (USD)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum by (provider, model) (llm_cost_usd_total{provider=~\"$provider\", model=~\"$model\"})",
+          "legendFormat": "{{provider}}/{{model}}"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 }
+    },
+    {
+      "id": 4,
+      "title": "Token throughput (tok/s)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum by (provider, model, kind) (rate(llm_tokens_total{provider=~\"$provider\", model=~\"$model\"}[1m]))",
+          "legendFormat": "{{provider}}/{{model}} [{{kind}}]"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 }
+    },
+    {
+      "id": 5,
+      "title": "Budget trips",
+      "type": "stat",
+      "targets": [
+        { "expr": "sum(llm_budget_exceeded_total) or vector(0)", "legendFormat": "trips" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          },
+          "unit": "short",
+          "noValue": "0"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center"
+      },
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 16 }
+    },
+    {
+      "id": 6,
+      "title": "Error rate by class",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum by (status) (rate(llm_requests_total{provider=~\"$provider\", model=~\"$model\", status!=\"ok\"}[5m])) or on() vector(0)",
+          "legendFormat": "{{status}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "fillOpacity": 10, "lineWidth": 2 },
+          "noValue": "0"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 16 }
+    }
+  ]
+}

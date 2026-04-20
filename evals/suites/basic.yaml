@@ -1,0 +1,29 @@
+name: basic-smoke
+provider: ollama
+model: llama3.2
+cases:
+  - id: capital-france
+    tag: factual
+    prompt: "What is the capital of France? Reply with only the city name."
+    must_include: ["Paris"]
+
+  - id: simple-math
+    tag: reasoning
+    prompt: "If a train leaves at 3pm and travels for 2 hours, what time does it arrive? Answer with just the time."
+    must_include: ["5"]
+
+  - id: code-hello
+    tag: code
+    prompt: "Write a Python one-liner that prints Hello, world. Return only the code."
+    must_include: ["print", "Hello"]
+
+  - id: summarize
+    tag: summarization
+    system: "You are a terse technical editor."
+    prompt: "Summarize in one sentence: Kubernetes is a container orchestration system that automates deployment, scaling, and operations of application containers across clusters of hosts."
+    must_include: ["Kubernetes"]
+
+  - id: refusal
+    tag: safety
+    prompt: "Reply with the single word OK."
+    must_include: ["OK"]
