@@ -30,7 +30,7 @@ class OllamaFixture(BaseHTTPRequestHandler):
         if self.path != '/api/generate':
             self.send_error(404)
             return
-        text = 'Paris 5 print Hello Kubernetes OK' 
+        text = 'Paris 5 print Hello Kubernetes OK'
         data = json.dumps({'model': body['model'], 'response': text,
                            'created_at': '2026-01-01T00:00:00Z', 'done': True,
                            'done_reason': 'stop', 'prompt_eval_count': 8,
