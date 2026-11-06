@@ -19,7 +19,18 @@ from urllib.request import Request, urlopen
 class OllamaFixture(BaseHTTPRequestHandler):
     def do_POST(self):
         body = json.loads(self.rfile.read(int(self.headers['Content-Length'])))
-        text = 'Paris 5 print Hello Kubernetes OK'
+        if self.path == '/api/show':
+            data = json.dumps({'model_info': {'llama.context_length': 8192}, 'details': {'family': 'llama'}}).encode()
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Content-Length', str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+            return
+        if self.path != '/api/generate':
+            self.send_error(404)
+            return
+        text = 'Paris 5 print Hello Kubernetes OK' 
         data = json.dumps({'model': body['model'], 'response': text,
                            'created_at': '2026-01-01T00:00:00Z', 'done': True,
                            'done_reason': 'stop', 'prompt_eval_count': 8,

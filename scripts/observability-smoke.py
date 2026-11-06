@@ -1,5 +1,6 @@
 """Verify real harness metrics and OTLP traces through the rebuilt review stack."""
 import json
+from datetime import datetime, timedelta, timezone
 import os
 import runpy
 import subprocess
@@ -50,8 +51,19 @@ def main():
             assert json.load(response)['output_tokens'] == 6
         query = 'http://127.0.0.1:9090/api/v1/query?' + urlencode({'query': 'llm_requests_total{status="ok"}'})
         eventually(lambda: any(float(row['value'][1]) >= 1 for row in json.loads(get(query))['data']['result']), 'actual harness metric scraped')
-        traces = 'http://127.0.0.1:16686/api/traces?' + urlencode({'service': 'llmops-harness', 'limit': 10})
-        eventually(lambda: any(span['operationName'] == 'llm.complete' for trace in json.loads(get(traces))['data'] for span in trace['spans']), 'actual OTLP trace ingested and queried')
+        now = datetime.now(timezone.utc)
+        traces = 'http://127.0.0.1:16686/api/v3/traces?' + urlencode({
+            'query.serviceName': 'llmops-harness',
+            'query.startTimeMin': (now-timedelta(minutes=5)).isoformat(),
+            'query.startTimeMax': (now+timedelta(minutes=5)).isoformat(),
+        })
+        def has_harness_span():
+            result = json.loads(get(traces))['result']
+            return any(span['name'] == 'llm.complete'
+                       for resource in result.get('resourceSpans', [])
+                       for scope in resource.get('scopeSpans', [])
+                       for span in scope.get('spans', []))
+        eventually(has_harness_span, 'actual OTLP trace ingested and queried')
     finally:
         process.terminate()
         try:
