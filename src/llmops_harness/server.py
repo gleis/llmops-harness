@@ -11,12 +11,13 @@ from fastapi.responses import Response
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from pydantic import BaseModel
 
+from . import __version__
 from .budget import BudgetExceeded, BudgetTracker
 from .client import CompletionRequest, LLMClient
 from .metrics import registry
 from .tracing import configure as configure_tracing
 
-app = FastAPI(title="llmops-harness", version="0.1.0")
+app = FastAPI(title="llmops-harness", version=__version__)
 _client: LLMClient | None = None
 
 

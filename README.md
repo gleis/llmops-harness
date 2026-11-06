@@ -70,7 +70,7 @@ The Grafana dashboard in `dashboards/llmops-harness.json` renders all of these a
 
 ## Project status
 
-**v0.1 — scaffolding.** Core client, metrics, tracing, budget module, one eval suite, docker-compose stack. Next up: v0.2 adds a reference RAG handler, v0.3 adds a simple HITL-gated agent runner.
+**v0.2 — maintained observability companion.** Locked dependencies, budget enforcement, metrics, tracing, evaluation and protocol smoke checks, and a rebuilt Prometheus/Jaeger stack are available. BrainRoute pairing is documented below. Reference RAG handlers, human approval agents, and a merged telemetry schema remain future work.
 
 ## License
 
