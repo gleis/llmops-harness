@@ -39,7 +39,7 @@ def main():
                OTEL_BSP_SCHEDULE_DELAY='500', DO_NOT_TRACK='true',
                LITELLM_LOCAL_MODEL_COST_MAP='true')
     process = subprocess.Popen([sys.executable, '-m', 'uvicorn', 'llmops_harness.server:app',
-                                '--host', '0.0.0.0', '--port', '8000'], env=env)
+                                '--host', '127.0.0.1', '--port', '8000'], env=env)
     try:
         eventually(lambda: json.loads(get('http://127.0.0.1:8000/health'))['status'] == 'ok', 'harness ready')
         eventually(lambda: bool(get('http://127.0.0.1:9090/-/ready')), 'Prometheus ready')

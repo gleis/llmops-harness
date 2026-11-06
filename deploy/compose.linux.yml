@@ -1,0 +1,9 @@
+# Keep the host harness bound to loopback while Prometheus scrapes it on Linux.
+# Docker Desktop on macOS routes host.docker.internal without this override.
+services:
+  prometheus:
+    network_mode: host
+    ports: !reset []
+    extra_hosts:
+      host.docker.internal: '127.0.0.1'
+    command: ['--config.file=/etc/prometheus/prometheus.yml', '--storage.tsdb.path=/prometheus', '--web.listen-address=127.0.0.1:9090']

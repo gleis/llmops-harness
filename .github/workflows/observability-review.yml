@@ -4,6 +4,9 @@ on:
     branches: [maintenance/observability-security]
   pull_request:
     paths: ['deploy/secure/**', 'scripts/observability-smoke.py', '.github/workflows/observability-review.yml']
+concurrency:
+  group: observability-security-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
@@ -18,7 +21,7 @@ jobs:
       - run: pip install --require-hashes -r requirements-dev.lock
       - run: pip install --no-deps -e .
       - name: Build pinned sources with patched modules
-        run: docker compose -f deploy/secure/compose.yaml build
+        run: docker compose -f deploy/docker-compose.yml -f deploy/compose.linux.yml build
       - name: Audit every runtime library in the review images
         run: |
           for image in llmops-prometheus-security:local llmops-jaeger-security:local; do
@@ -27,10 +30,10 @@ jobs:
       - name: Validate and start review stack
         run: |
           docker run --rm llmops-jaeger-security:local validate --config /etc/jaeger.yaml
-          docker compose -f deploy/secure/compose.yaml up -d
+          docker compose -f deploy/docker-compose.yml -f deploy/compose.linux.yml up -d
       - name: Verify UI, scrape/query, and OTLP ingestion/query
         run: python scripts/observability-smoke.py
       - if: always()
-        run: docker compose -f deploy/secure/compose.yaml logs --tail 100
+        run: docker compose -f deploy/docker-compose.yml -f deploy/compose.linux.yml logs --tail 100
       - if: always()
-        run: docker compose -f deploy/secure/compose.yaml down --volumes
+        run: docker compose -f deploy/docker-compose.yml -f deploy/compose.linux.yml down --volumes

@@ -6,7 +6,7 @@ Built as the substrate for RAG and agent systems — not the end product. If you
 
 ![llmops-harness dashboard — request rate, latency p50/p95/p99, cost, token throughput, budget trips, error rate by class](docs/dashboard.png)
 
-*Live Grafana dashboard after a handful of calls against local Ollama (llama3.2). Cost line is flat at $0 because Ollama is free; swap in a paid provider and it lifts off. Budget trips and error rate show **0** — the "no bad news" signal, not missing data.*
+*Historical Grafana dashboard example. Dashboard JSON is retained; bundled Grafana is paused until its signed data-source plugins have patched dependencies.*
 
 ## What's in the box
 
@@ -17,7 +17,7 @@ Built as the substrate for RAG and agent systems — not the end product. If you
 - **Retry policy** — exponential backoff with per-error-class rules (rate limit vs. provider error vs. context length)
 - **Eval harness** — YAML-defined suites replayed on demand; emits quality scores alongside cost and latency
 - **Grafana dashboard** — ships as JSON in the repo (see screenshot above)
-- **Docker-compose observability stack** — Prometheus + Grafana + Jaeger, up in one command
+- **Docker-compose observability stack** — rebuilt Prometheus + Jaeger with dependency audits
 
 ## Why this exists
 
@@ -30,10 +30,11 @@ Most LLM demo code looks like `client.chat(messages)` in a notebook. Most LLM pr
 git clone https://github.com/gleis/llmops-harness.git
 cd llmops-harness
 python -m venv .venv && source .venv/bin/activate
-pip install -e ".[dev]"
+pip install --require-hashes -r requirements-dev.lock
+pip install --no-deps -e .
 
-# Stand up the observability stack (Prometheus + Grafana + Jaeger)
-docker compose -f deploy/docker-compose.yml up -d
+# Stand up the observability stack (Prometheus + Jaeger)
+docker compose -f deploy/docker-compose.yml up --build -d
 
 # Copy env template and fill in your provider keys
 cp .env.example .env
@@ -50,7 +51,6 @@ curl -X POST http://localhost:8000/v1/complete \
 python -m llmops_harness.evals --suite evals/suites/basic.yaml
 
 # View metrics and traces
-open http://localhost:3000        # Grafana (admin/admin)
 open http://localhost:16686       # Jaeger
 open http://localhost:9090        # Prometheus
 ```
@@ -86,18 +86,30 @@ Run `python scripts/protocol-smoke.py` after installing the locked development d
 
 ### Observability container security review
 
-The original optional Compose stack still uses old vendor images. Current upstream
-Prometheus, Grafana, and Jaeger images also contain known bundled dependency
-findings, so upgrading tags alone does not meet a zero-known-vulnerability target.
+Current upstream Prometheus, Grafana, and Jaeger images contain known bundled
+dependency findings, so upgrading tags alone does not meet a zero-known-vulnerability target.
+The proposed default Compose stack builds Prometheus and Jaeger from pinned source
+and checked matching UI archives, recorded Go module locks with patched `x/net`
+and `x/crypto`, and Go 1.27.3. An isolated equivalent in `deploy/secure/compose.yaml`
+passed final-image vulnerability scans, UI checks, real harness metric scrape/query,
+and OTLP trace ingestion/query in CI.
 
-`deploy/secure/compose.yaml` is an isolated review stack: pinned Prometheus/Jaeger
-source and matching checked UI archives, recorded Go module locks with patched
-`x/net` and `x/crypto`, and Go 1.27.3 builds. CI builds and scans both final images,
-then checks their UIs and actual harness metrics/traces through scrape, OTLP
-transport, and query. Do not treat it as accepted until those checks pass.
+Grafana is temporarily absent: its current signed Prometheus/Jaeger catalog plugins
+still contain affected dependencies. Rebuilding those binaries invalidates their
+signatures. Signature validation is preserved. Dashboard JSON and provisioning
+files remain for a future patched release.
 
-Grafana is absent from this review stack. Its current signed Prometheus and Jaeger
-catalog plugins still contain affected dependencies; locally replacing their
-binaries breaks plugin signatures. Signature validation remains enabled. An owner
-decision is needed before replacing the original stack with this reduced stack;
-existing Grafana configuration, dashboards and volumes are preserved.
+The new project and Prometheus store do not reuse or alter the previous Grafana
+or Prometheus volumes. Stop any old stack before binding the same ports, without
+removing its volumes. Do not use `down --volumes` to migrate existing installations.
+
+On Linux, keep the host harness on loopback and use the host-network Prometheus
+override (Docker Compose 2.24 or newer):
+
+```sh
+docker compose -f deploy/docker-compose.yml -f deploy/compose.linux.yml up --build -d
+```
+
+On Docker Desktop/macOS, use the base Compose file; `host.docker.internal` reaches
+the host harness. The final deployment smoke uses the Linux override and keeps the harness on
+loopback too.
