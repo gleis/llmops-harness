@@ -1,0 +1,36 @@
+name: Observability security review
+on:
+  push:
+    branches: [maintenance/observability-security]
+  pull_request:
+    paths: ['deploy/secure/**', 'scripts/observability-smoke.py', '.github/workflows/observability-review.yml']
+permissions:
+  contents: read
+jobs:
+  rebuild-and-verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install --require-hashes -r requirements-dev.lock
+      - run: pip install --no-deps -e .
+      - name: Build pinned sources with patched modules
+        run: docker compose -f deploy/secure/compose.yaml build
+      - name: Audit every runtime library in the review images
+        run: |
+          for image in llmops-prometheus-security:local llmops-jaeger-security:local; do
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$RUNNER_TEMP/trivy-cache:/tmp/trivy-cache" aquasec/trivy:0.76.2 image --cache-dir /tmp/trivy-cache --scanners vuln --exit-code 1 "$image"
+          done
+      - name: Validate and start review stack
+        run: |
+          docker run --rm llmops-jaeger-security:local validate --config /etc/jaeger.yaml
+          docker compose -f deploy/secure/compose.yaml up -d
+      - name: Verify UI, scrape/query, and OTLP ingestion/query
+        run: python scripts/observability-smoke.py
+      - if: always()
+        run: docker compose -f deploy/secure/compose.yaml logs --tail 100
+      - if: always()
+        run: docker compose -f deploy/secure/compose.yaml down --volumes

@@ -1,0 +1,20 @@
+name: llmops-secure-review
+services:
+  prometheus:
+    build:
+      context: .
+      dockerfile: Prometheus.Dockerfile
+    image: llmops-prometheus-security:local
+    ports: ['127.0.0.1:9090:9090']
+    volumes:
+      - ../prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command: ['--config.file=/etc/prometheus/prometheus.yml', '--storage.tsdb.path=/prometheus']
+    extra_hosts: ['host.docker.internal:host-gateway']
+  jaeger:
+    build:
+      context: .
+      dockerfile: Jaeger.Dockerfile
+    image: llmops-jaeger-security:local
+    ports: ['127.0.0.1:16686:16686', '127.0.0.1:4318:4318', '127.0.0.1:13133:13133']
+# Grafana is intentionally absent from this review stack: current signed catalog
+# plugins still contain known vulnerable dependencies. No volumes are deleted.

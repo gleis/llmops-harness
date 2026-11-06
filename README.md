@@ -83,3 +83,21 @@ This repository remains the observability and budget companion to [BrainRoute](h
 ### Reproducible protocol smoke
 
 Run `python scripts/protocol-smoke.py` after installing the locked development dependencies. This starts isolated loopback HTTP services, exercises real LiteLLM transport, the shell smoke script, metrics, token-budget rejection, and five eval cases. Responses come from a deterministic Ollama protocol fixture; this checks integration plumbing, not model quality. It requires no provider credentials or model downloads and also runs in CI. Run the ordinary eval suite against a real local model to assess its answers.
+
+### Observability container security review
+
+The original optional Compose stack still uses old vendor images. Current upstream
+Prometheus, Grafana, and Jaeger images also contain known bundled dependency
+findings, so upgrading tags alone does not meet a zero-known-vulnerability target.
+
+`deploy/secure/compose.yaml` is an isolated review stack: pinned Prometheus/Jaeger
+source and matching checked UI archives, recorded Go module locks with patched
+`x/net` and `x/crypto`, and Go 1.27.3 builds. CI builds and scans both final images,
+then checks their UIs and actual harness metrics/traces through scrape, OTLP
+transport, and query. Do not treat it as accepted until those checks pass.
+
+Grafana is absent from this review stack. Its current signed Prometheus and Jaeger
+catalog plugins still contain affected dependencies; locally replacing their
+binaries breaks plugin signatures. Signature validation remains enabled. An owner
+decision is needed before replacing the original stack with this reduced stack;
+existing Grafana configuration, dashboards and volumes are preserved.
