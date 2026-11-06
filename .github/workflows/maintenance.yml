@@ -1,0 +1,21 @@
+name: Maintenance
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "23 9 * * 1"
+permissions:
+  contents: read
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install --require-hashes -r requirements-dev.lock
+      - run: pip install --no-deps -e .
+      - run: pytest
+      - run: pip install pip-audit
+      - run: pip-audit -r requirements-dev.lock --disable-pip --no-deps

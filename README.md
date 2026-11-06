@@ -27,7 +27,7 @@ Most LLM demo code looks like `client.chat(messages)` in a notebook. Most LLM pr
 
 ```bash
 # Clone and install
-git clone <your-repo-url>
+git clone https://github.com/gleis/llmops-harness.git
 cd llmops-harness
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
@@ -75,3 +75,7 @@ The Grafana dashboard in `dashboards/llmops-harness.json` renders all of these a
 ## License
 
 MIT.
+
+## Maintenance (2026-11-06)
+
+This repository remains the observability and budget companion to [BrainRoute](https://github.com/gleis/BrainRoute). BrainRoute owns routing policy; this package owns budgets, metrics, tracing, and provider evaluations. A merged telemetry schema and production consumer integration remain future work. The package remains usable independently. Install the hashed `requirements-dev.lock`, then `pip install --no-deps -e .` for development.
