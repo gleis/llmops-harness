@@ -17,5 +17,7 @@ jobs:
       - run: pip install --require-hashes -r requirements-dev.lock
       - run: pip install --no-deps -e .
       - run: pytest
+      - name: HTTP protocol smoke and eval pipeline (local fixture)
+        run: python scripts/protocol-smoke.py
       - run: pip install pip-audit
       - run: pip-audit -r requirements-dev.lock --disable-pip --no-deps

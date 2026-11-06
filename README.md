@@ -79,3 +79,7 @@ MIT.
 ## Maintenance (2026-11-06)
 
 This repository remains the observability and budget companion to [BrainRoute](https://github.com/gleis/BrainRoute). BrainRoute owns routing policy; this package owns budgets, metrics, tracing, and provider evaluations. A merged telemetry schema and production consumer integration remain future work. The package remains usable independently. Install the hashed `requirements-dev.lock`, then `pip install --no-deps -e .` for development.
+
+### Reproducible protocol smoke
+
+Run `python scripts/protocol-smoke.py` after installing the locked development dependencies. This starts isolated loopback HTTP services, exercises real LiteLLM transport, the shell smoke script, metrics, token-budget rejection, and five eval cases. Responses come from a deterministic Ollama protocol fixture; this checks integration plumbing, not model quality. It requires no provider credentials or model downloads and also runs in CI. Run the ordinary eval suite against a real local model to assess its answers.

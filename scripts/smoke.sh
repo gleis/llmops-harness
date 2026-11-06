@@ -33,10 +33,10 @@ print(f"  latency={latency:.2f}s  cost=${cost:.6f}  out={out}tok")
 for p in "${prompts[@]}"; do
   echo "→ $p"
   body=$(python3 -c 'import json, sys; print(json.dumps({"provider": sys.argv[1], "model": sys.argv[2], "prompt": sys.argv[3]}))' "$PROVIDER" "$MODEL" "$p")
-  response=$(curl -s -X POST "$URL" -H "Content-Type: application/json" -d "$body")
+  response=$(curl -fsS -X POST "$URL" -H "Content-Type: application/json" -d "$body")
   if [[ -z "$response" ]]; then
-    echo "  (no response — is uvicorn running on :8000?)"
-    continue
+    echo "No response from the harness" >&2
+    exit 1
   fi
-  format_line "$response" || echo "  (unparseable response: $response)"
+  format_line "$response"
 done
