@@ -70,7 +70,7 @@ The Grafana dashboard in `dashboards/llmops-harness.json` renders all of these a
 
 ## Project status
 
-**v0.2 — maintained observability companion.** Locked dependencies, budget enforcement, metrics, tracing, evaluation and protocol smoke checks, and a rebuilt Prometheus/Jaeger stack are available. BrainRoute pairing is documented below. Reference RAG handlers, human approval agents, and a merged telemetry schema remain future work.
+**v0.2 — maintained observability companion.** Locked dependencies, budget enforcement, metrics, tracing, evaluation and protocol smoke checks, and a rebuilt Prometheus/Jaeger stack are available. ModelRoute pairing is documented below. Reference RAG handlers, human approval agents, and a merged telemetry schema remain future work.
 
 ## License
 
@@ -78,7 +78,7 @@ MIT.
 
 ## Maintenance (2026-11-06)
 
-This repository remains the observability and budget companion to [BrainRoute](https://github.com/gleis/BrainRoute). BrainRoute owns routing policy; this package owns budgets, metrics, tracing, and provider evaluations. A merged telemetry schema and production consumer integration remain future work. The package remains usable independently. Install the hashed `requirements-dev.lock`, then `pip install --no-deps -e .` for development.
+This repository remains the observability and budget companion to [ModelRoute](https://github.com/gleis/ModelRoute). ModelRoute owns routing policy; this package owns budgets, metrics, tracing, and provider evaluations. A merged telemetry schema and production consumer integration remain future work. The package remains usable independently. Install the hashed `requirements-dev.lock`, then `pip install --no-deps -e .` for development.
 
 ### Reproducible protocol smoke
 
